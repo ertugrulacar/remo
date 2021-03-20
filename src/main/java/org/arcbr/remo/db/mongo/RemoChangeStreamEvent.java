@@ -1,5 +1,6 @@
 package org.arcbr.remo.db.mongo;
 
+import com.google.gson.Gson;
 import com.mongodb.client.model.changestream.OperationType;
 import org.arcbr.remo.db.redis.repository.RemoRedisRepository;
 import org.arcbr.remo.exception.RemoMongoInvalidStreamEventException;
@@ -30,44 +31,53 @@ public final class RemoChangeStreamEvent {
     private ReactiveMongoTemplate reactiveMongoTemplate;
     @Autowired
     private RemoRedisRepository redisRepository;
-    private Logger logger;
+    private Logger logger = LoggerFactory.getLogger(RemoChangeStreamEvent.class);
 
     private List<? extends AggregationOperation> aggregationOperations;
     private String collectionName;
-    private Criteria filter;
     private Class<? extends RemoModel> clazz;
-    private Consumer<ChangeStreamEvent<? extends RemoModel>> consumer;
+    private boolean isConsumerCreated;
 
     public void run(String collectionName, Class<? extends RemoModel> clazz){
         this.collectionName = collectionName;
         this.clazz = clazz;
-        logger = LoggerFactory.getLogger(RemoChangeStreamEvent.class);
-        reactiveMongoTemplate.changeStream(clazz).watchCollection(collectionName).listen().subscribe(createPrimitiveConsumer());
+
+        reactiveMongoTemplate.changeStream(clazz).watchCollection(collectionName).listen().subscribe( createPrimitiveConsumer() );
         logger.info("Collection " + collectionName + " is listening...");
     }
 
     public void run(String collectionName, Criteria filter, Class<? extends RemoModel> clazz){
         this.collectionName = collectionName;
-        this.filter = filter;
         this.clazz = clazz;
+
+        reactiveMongoTemplate.changeStream(clazz).watchCollection(collectionName).filter( filter ).listen().subscribe( createPrimitiveConsumer() );
+        logger.info("Collection " + collectionName + " is listening...");
     }
 
     public void run(String collectionName, Class<? extends RemoModel> clazz, List<? extends AggregationOperation> aggregationOperations){
         this.collectionName = collectionName;
         this.clazz = clazz;
         this.aggregationOperations = aggregationOperations;
+
+        reactiveMongoTemplate.changeStream(clazz).watchCollection(collectionName).listen().subscribe( createAggregatedConsumer() );
+        logger.info("Collection " + collectionName + " is listening...");
+
     }
 
     public void run(String collectionName, Criteria filter, Class<? extends RemoModel> clazz, List<? extends AggregationOperation> aggregationOperations){
         this.collectionName = collectionName;
-        this.filter = filter;
         this.clazz = clazz;
         this.aggregationOperations = aggregationOperations;
+
+
+        reactiveMongoTemplate.changeStream(clazz).watchCollection(collectionName).filter( filter ).listen().subscribe( createAggregatedConsumer() );
+        logger.info("Collection " + collectionName + " is listening...");
+
     }
 
 
     private MatchOperation getMatchOperation(String id){
-        return Aggregation.match(Criteria.where("id").is(id));
+        return Aggregation.match(Criteria.where("_id").is(id));
     }
 
     private Aggregation getFullAggregation(MatchOperation matchOperation){
@@ -77,9 +87,10 @@ public final class RemoChangeStreamEvent {
     }
 
     private Consumer<ChangeStreamEvent<? extends RemoModel>> createPrimitiveConsumer(){
-        if ( consumer != null )
+        if ( isConsumerCreated )
             throw new RemoMongoInvalidStreamEventException("Only one change stream event can be settled!", "MULTIPLE_STREAM_EVENT");
-        consumer = event -> {
+        isConsumerCreated = true;
+        return event -> {
             if (event.getOperationType().equals(OperationType.DELETE)){
                 String key = collectionName.concat(":").concat(event.getRaw().getDocumentKey().get("_id").asObjectId().getValue().toHexString());
                 redisRepository.delete(key);
@@ -90,8 +101,33 @@ public final class RemoChangeStreamEvent {
                 logger.info("Entity " + key + " has cached");
             }
         };
-        return consumer;
     }
+
+    private Consumer<ChangeStreamEvent<? extends RemoModel>> createAggregatedConsumer(){
+        if ( isConsumerCreated )
+            throw new RemoMongoInvalidStreamEventException("Only one change stream event can be settled!", "MULTIPLE_STREAM_EVENT");
+
+        isConsumerCreated = true;
+
+        return event -> {
+            if (event.getOperationType().equals(OperationType.DELETE)){
+                String key = collectionName.concat(":").concat(event.getRaw().getDocumentKey().get("_id").asObjectId().getValue().toHexString());
+                redisRepository.delete(key);
+                logger.info("Entity " + key + " has removed from cache");
+            }else if(event.getOperationType().equals(OperationType.INSERT) || event.getOperationType().equals(OperationType.UPDATE) || event.getOperationType().equals(OperationType.REPLACE)) {
+                String id = event.getRaw().getDocumentKey().get("_id").asObjectId().getValue().toHexString();
+                String key = collectionName.concat(":").concat( id );
+                Flux<? extends RemoModel> result = reactiveMongoTemplate.aggregate( getFullAggregation( getMatchOperation( id ) ), collectionName, clazz );
+                result.subscribe( entity -> {
+                    System.out.println(new Gson().toJson(entity));
+                    redisRepository.set(key, entity);
+                });
+                logger.info("Entity " + key + " has cached");
+            }
+        };
+    }
+
+
 
 
 }
