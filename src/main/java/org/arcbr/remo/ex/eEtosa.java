@@ -1,5 +1,6 @@
 package org.arcbr.remo.ex;
 
+import com.mongodb.MongoException;
 import org.arcbr.remo.app.RedisConnection;
 import org.arcbr.remo.db.redis.repository.RemoRedisRepository;
 import org.arcbr.remo.db.redis.repository.RemoSerializationRepository;
@@ -17,7 +18,6 @@ public class eEtosa {
 
     @PostMapping(value = "set", produces = "application/json")
     public void set(@RequestBody User user){
-
         redisRepository.set("1", user);
 
     }

@@ -1,6 +1,9 @@
 package org.arcbr.remo.db.redis.repository;
 
 import org.arcbr.remo.app.RedisConnection;
+import org.arcbr.remo.exception.RemoRedisEntityDecodeException;
+import org.arcbr.remo.exception.RemoRedisEntityEncodeException;
+import org.arcbr.remo.exception.RemoRedisEntityNotFoundException;
 import org.springframework.data.redis.hash.ObjectHashMapper;
 import redis.clients.jedis.Jedis;
 
@@ -22,8 +25,14 @@ public class RemoObjectMapperRepository implements RemoRedisRepository {
 
     @Override
     public void set(String key, Object o) {
-        Map<byte [], byte []> byteMap = objectMapper.toHash(o);
-        Map<String, String> stringMap = toStringMap( byteMap );
+        Map<String, String> stringMap;
+        try{
+            Map<byte [], byte []> byteMap = objectMapper.toHash(o);
+            stringMap = toStringMap( byteMap );
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new RemoRedisEntityEncodeException(e.getMessage());
+        }
         Jedis jedis = redisConnection.get();
         jedis.hset(key, stringMap);
         if (ttl != -1)
@@ -35,9 +44,16 @@ public class RemoObjectMapperRepository implements RemoRedisRepository {
     public <T> T get(String key, Class<T> clazz) {
         Jedis jedis = redisConnection.get();
         Map<String, String> stringMap = jedis.hgetAll(key);
+        if (stringMap.isEmpty()){
+            throw new RemoRedisEntityNotFoundException("Entity not found with key: " + key);
+        }
         jedis.close();
-        Map<byte [], byte []> byteMap = toByteMap(stringMap);
-        return objectMapper.fromHash(byteMap, clazz);
+        try{
+            Map<byte [], byte []> byteMap = toByteMap(stringMap);
+            return objectMapper.fromHash(byteMap, clazz);
+        }catch (Exception e){
+            throw new RemoRedisEntityDecodeException(e.getMessage());
+        }
     }
 
     @Override

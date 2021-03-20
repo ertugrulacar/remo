@@ -2,6 +2,7 @@ package org.arcbr.remo.db.mongo;
 
 import com.mongodb.client.model.changestream.OperationType;
 import org.arcbr.remo.db.redis.repository.RemoRedisRepository;
+import org.arcbr.remo.exception.RemoMongoInvalidStreamEventException;
 import org.arcbr.remo.model.RemoModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +78,7 @@ public final class RemoChangeStreamEvent {
 
     private Consumer<ChangeStreamEvent<? extends RemoModel>> createPrimitiveConsumer(){
         if ( consumer != null )
-            throw new RuntimeException("Only one change stream even can be settled!");
+            throw new RemoMongoInvalidStreamEventException("Only one change stream event can be settled!", "MULTIPLE_STREAM_EVENT");
         consumer = event -> {
             if (event.getOperationType().equals(OperationType.DELETE)){
                 String key = collectionName.concat(":").concat(event.getRaw().getDocumentKey().get("_id").asObjectId().getValue().toHexString());
@@ -91,5 +92,6 @@ public final class RemoChangeStreamEvent {
         };
         return consumer;
     }
+
 
 }
