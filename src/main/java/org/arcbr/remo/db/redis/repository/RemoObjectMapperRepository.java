@@ -11,9 +11,11 @@ public class RemoObjectMapperRepository implements RemoRedisRepository {
 
     private RedisConnection redisConnection;
     private ObjectHashMapper objectMapper;
+    private int ttl;
 
-    public RemoObjectMapperRepository(RedisConnection redisConnection) {
+    public RemoObjectMapperRepository(RedisConnection redisConnection, int ttl) {
         this.redisConnection = redisConnection;
+        this.ttl = ttl;
         this.objectMapper = new ObjectHashMapper();
     }
 
@@ -24,6 +26,8 @@ public class RemoObjectMapperRepository implements RemoRedisRepository {
         Map<String, String> stringMap = toStringMap( byteMap );
         Jedis jedis = redisConnection.get();
         jedis.hset(key, stringMap);
+        if (ttl != -1)
+            jedis.expire(key, ttl);
         jedis.close();
     }
 

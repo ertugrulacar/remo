@@ -16,14 +16,16 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 public class RemoRedisConfiguration {
 
     @Bean
-    public RemoRedisRepository repository(@Value("${remo.redis.storage.policy:object-mapper}") String policy, RedisConnection redisConnection){
+    public RemoRedisRepository repository(@Value("${remo.redis.storage.policy:object-mapper}") String policy, RedisConnection redisConnection, @Value("${remo.redis.cache.ttl:10800}") Integer ttl){
+        if (ttl < -1)
+            throw new RuntimeException("TTL can not be less than -1");
         if (policy.equals("object-mapper"))
-            return new RemoObjectMapperRepository( redisConnection );
+            return new RemoObjectMapperRepository( redisConnection, ttl );
         else if (policy.equals("json"))
-            return new RemoJSONRepository( redisConnection );
+            return new RemoJSONRepository( redisConnection, ttl );
         else if (policy.equals("serialization"))
-            return new RemoSerializationRepository( redisConnection );
+            return new RemoSerializationRepository( redisConnection, ttl );
         else
-            return new RemoObjectMapperRepository( redisConnection );
+            return new RemoObjectMapperRepository( redisConnection, ttl );
     }
 }

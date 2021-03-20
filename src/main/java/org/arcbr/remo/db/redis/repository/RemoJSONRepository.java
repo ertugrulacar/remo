@@ -5,14 +5,15 @@ import org.arcbr.remo.app.RedisConnection;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 
-@Service
 public class RemoJSONRepository implements RemoRedisRepository{
 
     private RedisConnection redisConnection;
+    private int ttl;
     private Gson gson;
 
-    public RemoJSONRepository(RedisConnection redisConnection) {
+    public RemoJSONRepository(RedisConnection redisConnection, int ttl) {
         this.redisConnection = redisConnection;
+        this.ttl = ttl;
         this.gson = new Gson();;
     }
 
@@ -20,7 +21,11 @@ public class RemoJSONRepository implements RemoRedisRepository{
     @Override
     public void set(String key, Object o) {
         Jedis jedis = redisConnection.get();
-        jedis.set(key, gson.toJson(o));
+        String value = gson.toJson(o);
+        if (ttl != -1)
+            jedis.setex(key, ttl, value);
+        else
+            jedis.set(key, value);
         jedis.close();
     }
 

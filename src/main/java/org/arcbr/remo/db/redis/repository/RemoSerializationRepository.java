@@ -9,9 +9,11 @@ import java.util.Base64;
 public class RemoSerializationRepository implements RemoRedisRepository{
     
     private RedisConnection redisConnection;
+    private int ttl;
 
-    public RemoSerializationRepository(RedisConnection redisConnection) {
+    public RemoSerializationRepository(RedisConnection redisConnection, int ttl) {
         this.redisConnection = redisConnection;
+        this.ttl = ttl;
     }
 
     @Override
@@ -22,7 +24,11 @@ public class RemoSerializationRepository implements RemoRedisRepository{
             ObjectOutputStream oos = new ObjectOutputStream(baos);
             oos.writeObject(o);
             String value = Base64.getEncoder().encodeToString( baos.toByteArray() );
-            jedis.set(key, value);
+            if (ttl != -1)
+                jedis.setex(key, ttl, value);
+            else
+                jedis.set(key, value);
+
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
