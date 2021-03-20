@@ -11,4 +11,6 @@ public interface RemoRedisRepository {
 
     <T> T get(String key, Class<T> clazz);
 
+    void delete(String key);
+
 }

@@ -53,6 +53,12 @@ public class RemoSerializationRepository implements RemoRedisRepository{
         } finally {
             jedis.close();
         }
+    }
 
+    @Override
+    public void delete(String key) {
+        Jedis jedis = redisConnection.get();
+        jedis.del(key);
+        jedis.close();
     }
 }

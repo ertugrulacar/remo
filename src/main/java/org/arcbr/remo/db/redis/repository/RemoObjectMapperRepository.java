@@ -40,6 +40,13 @@ public class RemoObjectMapperRepository implements RemoRedisRepository {
         return objectMapper.fromHash(byteMap, clazz);
     }
 
+    @Override
+    public void delete(String key) {
+        Jedis jedis = redisConnection.get();
+        jedis.del(key);
+        jedis.close();
+    }
+
 
     private Map<String, String> toStringMap(Map<byte[], byte []> val1){
         Map<String, String> val2 = new LinkedHashMap<>();

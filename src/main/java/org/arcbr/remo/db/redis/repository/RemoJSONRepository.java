@@ -39,6 +39,12 @@ public class RemoJSONRepository implements RemoRedisRepository{
         return gson.fromJson(val1, clazz);
     }
 
+    @Override
+    public void delete(String key) {
+        Jedis jedis = redisConnection.get();
+        jedis.del(key);
+        jedis.close();
+    }
 
 
 }

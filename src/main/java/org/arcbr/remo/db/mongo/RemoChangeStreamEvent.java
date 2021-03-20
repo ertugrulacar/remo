@@ -80,9 +80,11 @@ public final class RemoChangeStreamEvent {
             throw new RuntimeException("Only one change stream even can be settled!");
         consumer = event -> {
             if (event.getOperationType().equals(OperationType.DELETE)){
-
-            }else {
-                String key = collectionName.concat(":").concat(event.getBody().getId());
+                String key = collectionName.concat(":").concat(event.getRaw().getDocumentKey().get("_id").asObjectId().getValue().toHexString());
+                redisRepository.delete(key);
+                logger.info("Entity " + key + " has removed from cache");
+            }else if(event.getOperationType().equals(OperationType.INSERT) || event.getOperationType().equals(OperationType.UPDATE) || event.getOperationType().equals(OperationType.REPLACE)) {
+                String key = collectionName.concat(":").concat(event.getRaw().getDocumentKey().get("_id").asObjectId().getValue().toHexString());
                 redisRepository.set(key, event.getBody());
                 logger.info("Entity " + key + " has cached");
             }
