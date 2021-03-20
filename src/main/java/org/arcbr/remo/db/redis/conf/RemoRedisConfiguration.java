@@ -16,7 +16,7 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 public class RemoRedisConfiguration {
 
     @Bean
-    public RemoRedisRepository repository(@Value("${remo.redis.storage.policy:object-mapper}") String policy, RedisConnection redisConnection, @Value("${remo.redis.cache.ttl:10800}") Integer ttl){
+    public RemoRedisRepository redisRepository(@Value("${remo.redis.storage.policy:object-mapper}") String policy, RedisConnection redisConnection, @Value("${remo.redis.cache.ttl:10800}") Integer ttl){
         if (ttl < -1)
             throw new RuntimeException("TTL can not be less than -1");
         if (policy.equals("object-mapper"))

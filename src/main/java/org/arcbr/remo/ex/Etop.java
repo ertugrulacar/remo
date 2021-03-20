@@ -2,6 +2,9 @@ package org.arcbr.remo.ex;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.hash.DecoratingStringHashMapper;
 import org.springframework.data.redis.hash.HashMapper;
@@ -10,7 +13,9 @@ import org.springframework.data.redis.hash.ObjectHashMapper;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 //@Component
@@ -52,5 +57,17 @@ public class Etop {
 //
 //
 //        map.forEach( (k,v ) -> System.out.println(new String(k) + ": " + new String(v )));
+    }
+
+    public static void main(String[] args) {
+
+        List<? extends AggregationOperation> source = Arrays.asList(Aggregation.match(Criteria.where("id").is("id")));
+
+        List<AggregationOperation> list = new ArrayList<>(source);
+        list.add(0, Aggregation.match(Criteria.where("id").is("id")));
+        list.add(0, Aggregation.project());
+
+        list.forEach( elem -> System.out.println(elem.getClass().getName()));
+
     }
 }
