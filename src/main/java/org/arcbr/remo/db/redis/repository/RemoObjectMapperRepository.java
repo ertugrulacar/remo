@@ -10,15 +10,12 @@ import redis.clients.jedis.Jedis;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class RemoObjectMapperRepository implements RemoRedisRepository {
+public class RemoObjectMapperRepository extends AbstractRemoRedisRepository {
 
-    private RedisConnection redisConnection;
     private ObjectHashMapper objectMapper;
-    private int ttl;
 
     public RemoObjectMapperRepository(RedisConnection redisConnection, int ttl) {
-        this.redisConnection = redisConnection;
-        this.ttl = ttl;
+        super(redisConnection, ttl);
         this.objectMapper = new ObjectHashMapper();
     }
 
@@ -34,9 +31,12 @@ public class RemoObjectMapperRepository implements RemoRedisRepository {
             throw new RemoRedisEntityEncodeException(e.getMessage());
         }
         Jedis jedis = redisConnection.get();
+//        jedis.del(key);
         jedis.hset(key, stringMap);
         if (ttl != -1)
             jedis.expire(key, ttl);
+
+        logger.info("Entity " + key + " has cached");
         jedis.close();
     }
 
@@ -54,13 +54,6 @@ public class RemoObjectMapperRepository implements RemoRedisRepository {
         }catch (Exception e){
             throw new RemoRedisEntityDecodeException(e.getMessage());
         }
-    }
-
-    @Override
-    public void delete(String key) {
-        Jedis jedis = redisConnection.get();
-        jedis.del(key);
-        jedis.close();
     }
 
 

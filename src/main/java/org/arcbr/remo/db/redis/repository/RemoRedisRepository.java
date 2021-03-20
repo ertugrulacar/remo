@@ -13,4 +13,5 @@ public interface RemoRedisRepository {
 
     void delete(String key);
 
+    void extend(String key);
 }

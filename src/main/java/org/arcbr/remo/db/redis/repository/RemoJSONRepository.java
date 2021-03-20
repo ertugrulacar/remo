@@ -5,19 +5,18 @@ import org.arcbr.remo.app.RedisConnection;
 import org.arcbr.remo.exception.RemoRedisEntityDecodeException;
 import org.arcbr.remo.exception.RemoRedisEntityEncodeException;
 import org.arcbr.remo.exception.RemoRedisEntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 
-public class RemoJSONRepository implements RemoRedisRepository{
+public class RemoJSONRepository extends AbstractRemoRedisRepository {
 
-    private RedisConnection redisConnection;
-    private int ttl;
     private Gson gson;
 
     public RemoJSONRepository(RedisConnection redisConnection, int ttl) {
-        this.redisConnection = redisConnection;
-        this.ttl = ttl;
-        this.gson = new Gson();;
+        super(redisConnection, ttl);
+        this.gson = new Gson();
     }
 
 
@@ -34,6 +33,8 @@ public class RemoJSONRepository implements RemoRedisRepository{
             jedis.setex(key, ttl, value);
         else
             jedis.set(key, value);
+
+        logger.info("Entity " + key + " has cached");
         jedis.close();
     }
 
@@ -50,13 +51,4 @@ public class RemoJSONRepository implements RemoRedisRepository{
             throw new RemoRedisEntityDecodeException(e.getMessage());
         }
     }
-
-    @Override
-    public void delete(String key) {
-        Jedis jedis = redisConnection.get();
-        jedis.del(key);
-        jedis.close();
-    }
-
-
 }

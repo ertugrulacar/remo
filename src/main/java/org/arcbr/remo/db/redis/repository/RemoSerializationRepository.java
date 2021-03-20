@@ -5,19 +5,18 @@ import org.arcbr.remo.exception.RemoRedisEntityDecodeException;
 import org.arcbr.remo.exception.RemoRedisEntityEncodeException;
 import org.arcbr.remo.exception.RemoRedisEntityNotFoundException;
 import org.arcbr.remo.exception.RemoRedisException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
 import java.io.*;
 import java.util.Base64;
 
-public class RemoSerializationRepository implements RemoRedisRepository{
-    
-    private RedisConnection redisConnection;
-    private int ttl;
+public class RemoSerializationRepository extends AbstractRemoRedisRepository{
+
 
     public RemoSerializationRepository(RedisConnection redisConnection, int ttl) {
-        this.redisConnection = redisConnection;
-        this.ttl = ttl;
+        super(redisConnection, ttl);
     }
 
     @Override
@@ -32,6 +31,8 @@ public class RemoSerializationRepository implements RemoRedisRepository{
                 jedis.setex(key, ttl, value);
             else
                 jedis.set(key, value);
+
+            logger.info("Entity " + key + " has cached");
         } catch (IOException e) {
             e.printStackTrace();
             throw new RemoRedisEntityEncodeException(e.getMessage());
@@ -62,10 +63,4 @@ public class RemoSerializationRepository implements RemoRedisRepository{
         }
     }
 
-    @Override
-    public void delete(String key) {
-        Jedis jedis = redisConnection.get();
-        jedis.del(key);
-        jedis.close();
-    }
 }

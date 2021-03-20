@@ -1,6 +1,7 @@
 package org.arcbr.remo.ex;
 
 import org.arcbr.remo.model.RemoModel;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.io.Serializable;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 public class User extends RemoModel {
 
     private String name;
+    @Field("last_name")
     private String lastName;
     private List<Integer> list;
     private User user;

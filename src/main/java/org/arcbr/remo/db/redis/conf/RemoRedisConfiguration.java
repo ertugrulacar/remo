@@ -1,16 +1,10 @@
 package org.arcbr.remo.db.redis.conf;
 
 import org.arcbr.remo.app.RedisConnection;
-import org.arcbr.remo.db.redis.repository.RemoJSONRepository;
-import org.arcbr.remo.db.redis.repository.RemoObjectMapperRepository;
-import org.arcbr.remo.db.redis.repository.RemoRedisRepository;
-import org.arcbr.remo.db.redis.repository.RemoSerializationRepository;
+import org.arcbr.remo.db.redis.repository.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 @Configuration
 public class RemoRedisConfiguration {
