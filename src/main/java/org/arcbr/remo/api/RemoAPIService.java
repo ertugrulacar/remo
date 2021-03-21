@@ -9,11 +9,13 @@ import org.arcbr.remo.exception.api.BadRequestException;
 import org.arcbr.remo.exception.api.UnknownErrorException;
 import org.arcbr.remo.model.RemoModel;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class RemoAPIService {
@@ -27,15 +29,31 @@ public class RemoAPIService {
     @Autowired
     private RemoMongoRepository mongoRepository;
 
+    private ExecutorService executorService = Executors.newFixedThreadPool(64);
+
     public ResponseEntity<?> get(String collectionName, String objectId) {
+        return getEntity( collectionName, objectId, validate( collectionName, objectId ) );
+    }
+
+    public ResponseEntity<?> asyncSet(String collectionName, String objectId){
+        RemoChangeStreamEvent event = validate(collectionName, objectId);
+        executorService.submit( () -> getEntity( collectionName, objectId, event ) );
+        return responseBuilder.asyncOk();
+    }
+
+
+    private RemoChangeStreamEvent validate(String collectionName, String objectId){
         if (!StringUtils.hasText( collectionName ))
             throw new BadRequestException("Invalid collection name", "PRECONDITION_FAILED");
         if (!StringUtils.hasText( objectId ))
             throw new BadRequestException("Invalid objectId", "PRECONDITION_FAILED");
-
         RemoChangeStreamEvent event = initialSources.getOutputClass(collectionName);
         if (event == null)
             throw new BadRequestException("Unknown collection name", "UNKNOWN_COLLECTION");
+        return event;
+    }
+
+    private ResponseEntity<?> getEntity(String collectionName, String objectId, RemoChangeStreamEvent event){
         try{
             String key = collectionName + ":" + objectId;
             Object o = redisRepository.get(key, event.clazz);
@@ -53,7 +71,5 @@ public class RemoAPIService {
             throw new UnknownErrorException("Unknown Error");
         }
     }
-
-
 
 }

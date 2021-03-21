@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -18,6 +19,12 @@ public class RemoAPIResponseBuilder {
 
     public ResponseEntity<Map<String, Object>> noContent(){
         return new ResponseEntity<>(getDefault(0, 0), HttpStatus.NO_CONTENT);
+    }
+
+    public ResponseEntity<Map<String, Object>> asyncOk(){
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "OK");
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
 

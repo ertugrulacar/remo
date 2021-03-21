@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -17,4 +18,9 @@ public class RemoAPIController {
         return service.get(collectionName, objectId);
     }
 
-}
+    @PostMapping(value = "{collectionName}/{objectId}/sync", produces = "application/json")
+    public ResponseEntity<?> asyncSet(@PathVariable("collectionName") String collectionName, @PathVariable("objectId") String objectId) {
+        return service.asyncSet(collectionName, objectId);
+    }
+
+    }
